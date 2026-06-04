@@ -77,6 +77,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,san
 .rationale{max-width:960px;margin:0 auto;padding:0 2rem 3.5rem;display:grid;grid-template-columns:200px 1fr;gap:4rem;border-top:1px solid #dedad3;padding-top:2.5rem}
 .rationale-label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#b5b2aa;padding-top:.3rem;font-family:'Instrument Sans',system-ui,sans-serif}
 .rationale-body{display:grid;grid-template-columns:1fr 1fr 1fr;gap:2rem}
+.rationale-intro{grid-column:1/-1;font-family:'EB Garamond',Georgia,serif;font-size:clamp(1.25rem,2.2vw,1.65rem);font-weight:400;line-height:1.35;color:#151412;margin-bottom:.25rem}
+.rationale-intro em{font-style:italic;color:#3d3b37}
 .r-title{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#b5b2aa;margin-bottom:.5rem;font-family:'Instrument Sans',system-ui,sans-serif}
 .r-text{font-size:13.5px;color:#3d3b37;line-height:1.75}
 
@@ -244,17 +246,18 @@ footer a:hover{color:#2a5298}
 <div class="rationale">
   <span class="rationale-label">Design rationale</span>
   <div class="rationale-body">
+    <p class="rationale-intro">I designed the interface around a <em>shared feedback model</em>: both users see the same core compression signal, but each view is scoped to the decisions that person needs to make in the moment.</p>
     <div>
       <p class="r-title">Shared waveform</p>
-      <p class="r-text">Both views use the same target-vs.-actual waveform. The "MATCH HERE" marker gives the bystander a visual target and gives the expert a shared reference point for real-time coaching.</p>
+      <p class="r-text">Both views use the same target-vs.-actual waveform. The "MATCH HERE" marker gives the bystander a simple timing target and gives the expert a shared reference point for real-time coaching.</p>
     </div>
     <div>
       <p class="r-title">Asymmetric information</p>
-      <p class="r-text">The bystander sees one number and one directive. The expert sees that plus rate, depth, and incident context. The asymmetry is intentional — the bystander shouldn't interpret clinical metrics under stress.</p>
+      <p class="r-text">The bystander sees one number and one directive. The expert sees match rate, compression rate, depth, and incident context. The asymmetry is intentional — the bystander should act, while the expert interprets.</p>
     </div>
     <div>
       <p class="r-title">Open question</p>
-      <p class="r-text">How much feedback helps vs. distracts the bystander? The next evaluation phase would test whether real-time waveform visibility improves or hurts compression quality under simulated stress.</p>
+      <p class="r-text">The next evaluation phase would test whether real-time waveform visibility improves compression quality or creates distraction under simulated stress, especially for first-time bystanders.</p>
     </div>
   </div>
 </div>
