@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Real-Time CPR Guidance System | Angela Chan</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#0F172A;background:#fff;line-height:1.6}
+nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid #E2E8F0;padding:0 2.5rem;height:58px;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{font-size:.8rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#0F172A}
+.nav-links{display:flex;gap:1.35rem;list-style:none}
+.nav-links a{font-size:.82rem;color:#6B7280;text-decoration:none;transition:color .15s}
+.nav-links a:hover{color:#0F172A}
+.hero{padding:6rem 2rem 4rem;text-align:center;max-width:780px;margin:0 auto}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:.4rem;background:#F1F5F9;color:#475569;font-size:.75rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:.3rem .9rem;border-radius:100px;margin-bottom:1.75rem}
+.hero h1{font-size:clamp(2rem,5vw,3.25rem);font-weight:700;line-height:1.15;letter-spacing:-.5px;margin-bottom:1.25rem}
+.hero p{font-size:1.05rem;color:#6B7280;max-width:520px;margin:0 auto 2.25rem;line-height:1.75}
+.hero-pills{display:flex;gap:.6rem;justify-content:center;flex-wrap:wrap}
+.pill{padding:.35rem 1rem;border-radius:100px;font-size:.8rem;font-weight:500;border:1.5px solid}
+.pill-blue{border-color:#BFDBFE;color:#1D4ED8;background:#EFF6FF}
+.pill-red{border-color:#FECACA;color:#DC2626;background:#FEF2F2}
+#hero-ecg{display:block;width:100%;max-width:640px;margin:2.5rem auto 0;opacity:.6}
+.brief-strip{background:#F8FAFC;border-top:1px solid #E2E8F0;border-bottom:1px solid #E2E8F0;padding:1.75rem 2rem}
+.brief-inner{max-width:960px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1.5rem}
+.brief-label{font-size:.65rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#94A3B8;margin-bottom:.3rem}
+.brief-value{font-size:.875rem;font-weight:500;color:#0F172A;line-height:1.4}
+section{padding:5rem 2rem}
+.inner{max-width:960px;margin:0 auto}
+.alt{background:#F8FAFC}
+.eyebrow{font-size:.7rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#2563EB;margin-bottom:.6rem}
+.sec-title{font-size:clamp(1.4rem,3vw,2rem);font-weight:700;letter-spacing:-.3px;margin-bottom:.75rem}
+.sec-sub{font-size:.95rem;color:#6B7280;max-width:520px;margin-bottom:2.75rem;line-height:1.7}
+.problem-grid{display:grid;grid-template-columns:220px 1fr;gap:3rem;align-items:center}
+.stat-box{background:#EFF6FF;border-radius:16px;padding:2rem 1.5rem;text-align:center}
+.stat-num{font-size:3.5rem;font-weight:800;color:#2563EB;line-height:1;margin-bottom:.4rem}
+.stat-label{font-size:.8rem;color:#6B7280;line-height:1.5}
+.problem-text h3{font-size:1.15rem;font-weight:600;margin-bottom:.75rem}
+.problem-text p{font-size:.9rem;color:#6B7280;line-height:1.75}
+.decisions-grid{display:flex;flex-direction:column;border:1.5px solid #E2E8F0;border-radius:16px;overflow:hidden}
+.decision{display:grid;grid-template-columns:1fr 2fr;border-bottom:1px solid #E2E8F0}
+.decision:last-child{border-bottom:none}
+.decision-quote{padding:2rem;background:#F8FAFC;border-right:1px solid #E2E8F0;display:flex;align-items:center}
+.decision-quote blockquote{font-size:1rem;font-weight:600;color:#0F172A;line-height:1.5;font-style:normal}
+.decision-quote blockquote::before{content:'\201C';font-size:2rem;color:#BFDBFE;line-height:0;vertical-align:-.4em;margin-right:.2rem}
+.decision-quote blockquote::after{content:'\201D';font-size:2rem;color:#BFDBFE;line-height:0;vertical-align:-.4em;margin-left:.2rem}
+.decision-body{padding:2rem}
+.decision-tag{font-size:.65rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#94A3B8;margin-bottom:.5rem}
+.decision-body p{font-size:.875rem;color:#6B7280;line-height:1.7}
+.decision-body strong{color:#0F172A;font-weight:600}
+.arch-row{display:flex;align-items:stretch}
+.arch-node{flex:1;border-radius:14px;padding:1.5rem;border:1.5px solid}
+.arch-node.n-expert{background:#EFF6FF;border-color:#BFDBFE}
+.arch-node.n-trainee{background:#FEF2F2;border-color:#FECACA}
+.arch-nt{font-size:.65rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:.85rem;text-align:center}
+.n-expert .arch-nt{color:#1D4ED8}
+.n-trainee .arch-nt{color:#DC2626}
+.arch-list{list-style:none;display:flex;flex-direction:column;gap:.45rem}
+.arch-list li{font-size:.8rem;color:#374151;display:flex;gap:.4rem}
+.arch-list li::before{content:'—';color:#CBD5E1;flex-shrink:0}
+.tech-pills{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:1rem}
+.tech-pill{background:#F1F5F9;color:#475569;padding:.3rem .8rem;border-radius:100px;font-size:.75rem;font-weight:500}
+.feat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:1rem}
+.feat-card{border:1.5px solid #E2E8F0;border-radius:14px;padding:1.5rem;transition:box-shadow .2s,transform .2s}
+.feat-card:hover{box-shadow:0 6px 20px rgba(0,0,0,.07);transform:translateY(-2px)}
+.feat-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;margin-bottom:.9rem}
+.feat-card h3{font-size:.9rem;font-weight:600;margin-bottom:.35rem}
+.feat-card p{font-size:.82rem;color:#6B7280;line-height:1.65}
+.hypo-box{background:#EFF6FF;border:1.5px solid #BFDBFE;border-radius:14px;padding:1.5rem;margin-bottom:2rem}
+.hypo-label{font-size:.65rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#2563EB;margin-bottom:.4rem}
+.hypo-box p{font-size:.92rem;color:#1E40AF;font-style:italic;line-height:1.65}
+
+/* DEMO TABS */
+.demo-tabs{display:flex;gap:.5rem;margin-bottom:1.5rem}
+.demo-tab{padding:.4rem 1rem;border-radius:100px;font-size:.8rem;font-weight:500;cursor:pointer;border:1.5px solid #E2E8F0;background:#fff;color:#6B7280;transition:all .15s;font-family:-apple-system,sans-serif}
+.demo-tab.active{background:#0F172A;color:#fff;border-color:#0F172A}
+
+/* PHONE FRAME */
+.phone-frame{max-width:860px;margin:0 auto;background:#1C1C1E;border-radius:44px;padding:14px;box-shadow:0 24px 64px rgba(0,0,0,.35),inset 0 0 0 1px rgba(255,255,255,.08)}
+.phone-screen{background:#fff;border-radius:32px;overflow:hidden}
+
+/* EXPERT FRAME */
+.expert-frame{border-radius:16px;overflow:hidden;border:1.5px solid #2D3748;box-shadow:0 20px 60px rgba(0,0,0,.12)}
+
+/* SHARED INTERFACE ELEMENTS */
+.iface-header{background:#0A0F1E;padding:.7rem 1.25rem;display:flex;align-items:center;gap:.75rem}
+.iface-header .h-conn{display:flex;align-items:center;gap:.4rem;font-size:.72rem;color:rgba(255,255,255,.7);font-weight:500;flex:1}
+.iface-header .h-title{font-size:.8rem;font-weight:700;color:#fff;letter-spacing:.3px;flex:1;text-align:center}
+.iface-header .h-right{display:flex;align-items:center;gap:.5rem;flex:1;justify-content:flex-end}
+.h-conn-dot{width:7px;height:7px;background:#10B981;border-radius:50%}
+.h-live{background:#EF4444;color:#fff;font-size:.6rem;font-weight:700;letter-spacing:1px;padding:.15rem .5rem;border-radius:4px}
+.h-time{font-size:.72rem;color:rgba(255,255,255,.6);font-weight:500}
+.h-btn{background:#2563EB;color:#fff;border:none;font-size:.65rem;font-weight:600;padding:.25rem .7rem;border-radius:5px;letter-spacing:.3px;font-family:inherit}
+
+.iface-body{display:flex;background:#fff}
+.chart-col{flex:1;padding:.5rem .5rem .25rem .25rem;border-right:1px solid #F1F5F9;min-width:0}
+.chart-col svg{display:block;width:100%;height:auto}
+.stats-col{width:200px;flex-shrink:0;padding:1rem 1rem 1rem 1rem;display:flex;flex-direction:column;gap:.6rem}
+.stats-col.wide{width:230px}
+
+/* STATS PANEL */
+.s-label{font-size:.6rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#94A3B8}
+.s-big{font-size:2.2rem;font-weight:800;line-height:1.1}
+.s-sub{font-size:.72rem;color:#6B7280}
+.s-divider{border:none;border-top:1px solid #F1F5F9;margin:.15rem 0}
+.s-status-row{display:flex;align-items:center;gap:.4rem}
+.s-status-icon{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;flex-shrink:0}
+.s-status-icon.ok{background:#D1FAE5;color:#065F46}
+.s-status-icon.err{background:#FEE2E2;color:#991B1B}
+.s-status-text{font-size:.82rem;font-weight:700}
+.s-desc{font-size:.72rem;color:#6B7280;line-height:1.4}
+.s-metrics-grid{display:flex;flex-direction:column;gap:.4rem}
+.s-metric{display:flex;align-items:baseline;justify-content:space-between;padding:.3rem .5rem;background:#F8FAFC;border-radius:6px}
+.s-metric-label{font-size:.65rem;color:#6B7280}
+.s-metric-val{font-size:.95rem;font-weight:700;color:#0F172A}
+.s-metric-unit{font-size:.6rem;color:#9CA3AF;margin-left:.2rem}
+.s-patient{font-size:.72rem;color:#374151;line-height:1.6}
+.s-patient span{color:#9CA3AF;font-size:.65rem}
+.s-row2{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+
+/* INTERACTION EVIDENCE CARDS */
+.interaction-grid{display:grid;grid-template-columns:1fr;gap:1.25rem}
+.interaction-card{display:grid;grid-template-columns:minmax(280px,1.1fr) minmax(280px,1fr);gap:1.5rem;align-items:center;border:1.5px solid #E2E8F0;border-radius:16px;background:#fff;padding:1.5rem;box-shadow:0 8px 28px rgba(15,23,42,.04)}
+.interaction-copy h3{font-size:1rem;font-weight:700;margin-bottom:.45rem;color:#0F172A}
+.interaction-copy p{font-size:.86rem;color:#6B7280;line-height:1.7}
+.interaction-visual{border:1px solid #E2E8F0;border-radius:14px;background:#F8FAFC;padding:1rem;overflow:hidden}
+.interaction-caption{font-size:.68rem;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#94A3B8;margin-bottom:.65rem}
+.mini-ui{background:#fff;border:1px solid #E5E7EB;border-radius:12px;overflow:hidden;box-shadow:0 8px 20px rgba(15,23,42,.06)}
+.mini-header{background:#0A0F1E;color:#fff;font-size:.62rem;font-weight:700;letter-spacing:.5px;padding:.45rem .7rem;display:flex;justify-content:space-between;align-items:center}
+.mini-live{background:#EF4444;color:#fff;font-size:.5rem;font-weight:700;padding:.1rem .35rem;border-radius:3px}
+.mini-body{display:grid;grid-template-columns:1fr 116px;gap:0}
+.mini-chart{padding:.55rem;border-right:1px solid #F1F5F9}
+.mini-panel{padding:.65rem;display:flex;flex-direction:column;gap:.45rem}
+.mini-label{font-size:.5rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#94A3B8}
+.mini-big{font-size:1.35rem;font-weight:800;line-height:1;color:#DC2626}
+.mini-status{display:flex;align-items:center;gap:.35rem;font-size:.68rem;font-weight:700;color:#DC2626}
+.mini-status span{width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#FEE2E2;color:#991B1B;font-size:.55rem}
+.mini-desc{font-size:.6rem;color:#6B7280}
+@media(max-width:760px){.interaction-card{grid-template-columns:1fr}.mini-body{grid-template-columns:1fr}.mini-chart{border-right:none;border-bottom:1px solid #F1F5F9}}
+
+
+.problem-visual{margin-top:2.5rem;border-radius:18px;overflow:hidden;border:1.5px solid #E2E8F0;background:#fff;box-shadow:0 16px 42px rgba(15,23,42,.08)}
+.problem-visual img{display:block;width:100%;height:auto}
+.problem-caption{padding:1rem 1.25rem;font-size:.82rem;color:#6B7280;line-height:1.6;background:#fff}
+.problem-caption strong{color:#0F172A}
+
+
+.problem-context-grid{display:grid;grid-template-columns:minmax(260px,.9fr) 1.1fr;gap:2.5rem;align-items:center}
+.problem-illustration{background:#fff;border:1.5px solid #E2E8F0;border-radius:18px;padding:1.25rem;box-shadow:0 14px 38px rgba(15,23,42,.06)}
+.problem-illustration img{display:block;width:100%;height:auto}
+.problem-visual-note{font-size:.8rem;color:#6B7280;line-height:1.55;margin-top:.85rem}
+.problem-visual-note strong{color:#0F172A}
+@media(max-width:760px){.problem-context-grid{grid-template-columns:1fr}.problem-illustration{order:2}}
+
+
+.problem-visual-row{display:grid;grid-template-columns:220px 1fr;gap:3rem;align-items:center;margin-bottom:2.25rem}
+.problem-illustration-inline{background:#fff;border:1.5px solid #E2E8F0;border-radius:18px;padding:1.1rem;box-shadow:0 14px 38px rgba(15,23,42,.06)}
+.problem-illustration-inline img{display:block;width:100%;height:auto}
+.problem-visual-note{font-size:.8rem;color:#6B7280;line-height:1.55;margin-top:.85rem}
+.problem-visual-note strong{color:#0F172A}
+@media(max-width:760px){.problem-visual-row{grid-template-columns:1fr}.problem-grid{grid-template-columns:1fr}}
+
+
+.problem-visual-note{font-size:.8rem;color:#6B7280;line-height:1.55;margin-top:.85rem}
+.problem-visual-note strong{color:#0F172A}
+
+.feat-icon svg{width:24px;height:24px;display:block}
+
+.scan-list{list-style:none;display:flex;flex-direction:column;gap:.45rem;margin-top:.9rem}
+.scan-list li{font-size:.86rem;color:#374151;line-height:1.55;display:flex;gap:.45rem}
+.scan-list li::before{content:'•';color:#0F172A;font-weight:700;flex-shrink:0}
+.decision-points{list-style:none;display:flex;flex-direction:column;gap:.5rem;margin-top:.85rem}
+.decision-points li{font-size:.84rem;color:#374151;line-height:1.55}
+.decision-points strong{color:#0F172A;font-weight:700}
+.outcome-intro{font-size:.95rem;color:#6B7280;line-height:1.75;max-width:700px;margin-bottom:2rem}
+@media(max-width:760px){}
+
+.problem-text .scan-list li{letter-spacing:0;word-spacing:normal;text-align:left}
+.problem-text .scan-list li strong{white-space:nowrap}
+footer{border-top:1px solid #E2E8F0;padding:2rem;text-align:center}
+footer p{font-size:.8rem;color:#CBD5E1}
+
+@media(max-width:760px){
+  .alignment-artifact-grid{grid-template-columns:1fr !important}
+}
+
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="nav-logo">CPR Guidance System</span>
+  <ul class="nav-links">
+    <li><a href="#problem">Problem</a></li>
+    <li><a href="#system">System</a></li>
+    <li><a href="#collaboration">Alignment</a></li>
+    <li><a href="#decisions">Decisions</a></li>
+    <li><a href="#craft">Interaction</a></li>
+    <li><a href="#outcome">Outcome</a></li>
+  </ul>
+</nav>
+
+<div class="hero">
+  <div class="hero-eyebrow">🫀 Medical Technology &nbsp;·&nbsp; Human-Centered Systems Research</div>
+  <h1>Real-Time CPR Guidance for<br><em style="color:#EF4444">High-Stress Emergencies</em></h1>
+  <p>A multi-sided emergency response platform that translates bystander compression signals into guidance for two users: remote medical experts monitoring performance, and bystanders adjusting compressions in the moment.</p>
+  <p style="font-size:.86rem;color:#94A3B8;margin:-1.25rem auto 2rem;line-height:1.5">Work sample by Angela Chan</p>
+  <div class="hero-pills">
+    <span class="pill pill-blue">Expert Monitoring</span>
+    <span class="pill pill-red">Bystander Guidance</span>
+  </div>
+  <canvas id="hero-ecg" height="72"></canvas>
+</div>
+
+<div class="brief-strip">
+  <div class="brief-inner">
+    <div><div class="brief-label">My Role</div><div class="brief-value">Research &amp; product strategy lead — translated clinical priorities into user-centered product direction, defined interaction requirements, prototyped feedback models, and aligned MVP scope</div></div>
+    <div><div class="brief-label">Duration</div><div class="brief-value">2-month project</div></div>
+    <div><div class="brief-label">Stage</div><div class="brief-value">0 → 1 stealth digital health concept</div></div>
+    <div><div class="brief-label">Intended Users</div><div class="brief-value">Bystanders, medical dispatch &amp; remote medical experts</div></div>
+    <div><div class="brief-label">Core Challenge</div><div class="brief-value">Designing real-time guidance for a high-stress physical task</div></div>
+  </div>
+</div>
+
+<div style="max-width:960px;margin:1rem auto 0;padding:0 2rem">
+  <p style="font-size:.78rem;color:#94A3B8;line-height:1.5;text-align:center">Note: Details have been generalized to respect confidentiality for a stealth digital health startup.</p>
+</div>
+
+<section class="alt" id="problem">
+  <div class="inner">
+    <div class="eyebrow">The Problem</div>
+    <div class="problem-grid">
+      <div class="stat-box">
+        <div class="stat-num">350K+</div>
+        <div class="stat-label">out-of-hospital cardiac arrests each year — where bystander CPR can double or triple survival chances</div>
+      </div>
+      <div class="problem-text">
+        <h3>How might we help an untrained bystander perform effective CPR while waiting for EMS, when verbal coaching alone may fail under pressure?</h3>
+        <ul class="scan-list">
+          <li>CPR quality depends on both <strong>rhythm</strong> and <strong style="white-space:nowrap">force-related movement</strong>.</li>
+          <li>Rhythm can be coached verbally, but force-related movement needs a more tangible feedback model.</li>
+          <li>The platform needed to translate physical action into guidance that helps experts monitor and bystanders act.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="system">
+  <div class="inner">
+    <div class="eyebrow">System Context</div>
+    <div class="sec-title">Two Users, One Real-Time Feedback Loop</div>
+    <p class="sec-sub">The platform connects a remote medical expert and a bystander through one feedback loop. It receives compression movement data from a connected wearable and sends pacing cues back to the bystander.</p>
+    </div>
+      
+    </div>
+    <div class="arch-row">
+      <div class="arch-node n-expert">
+        <svg viewBox="0 0 160 88" xmlns="http://www.w3.org/2000/svg" style="width:100%;margin-bottom:1rem">
+          <rect x="16" y="28" width="128" height="52" rx="8" fill="#DBEAFE" stroke="#2563EB" stroke-width="1.5"/>
+          <polyline points="24,54 34,54 39,36 44,54 54,54 59,43 64,66 69,54 84,54 89,44 94,64 99,54 114,54 130,54" fill="none" stroke="#2563EB" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+        </svg>
+        <div class="arch-nt">Medical Expert / Dispatch Side</div>
+        <ul class="arch-list">
+          <li>Monitors target vs. responder compressions</li>
+          <li>Tracks compression quality over time</li>
+          <li>Provides verbal feedback and guidance</li>
+        </ul>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 .5rem;min-width:110px">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="width:100%">
+          <ellipse cx="50" cy="50" rx="40" ry="15" fill="none" stroke="#DDD6FE" stroke-width="1" stroke-dasharray="4,3"/>
+          <ellipse cx="50" cy="50" rx="48" ry="24" fill="none" stroke="#DDD6FE" stroke-width="1" stroke-dasharray="4,3" opacity=".5"/>
+          <path d="M0,40 Q50,24 100,40" fill="none" stroke="#BFDBFE" stroke-width="1.5" stroke-dasharray="3,2"/>
+          <path d="M100,60 Q50,76 0,60" fill="none" stroke="#FECACA" stroke-width="1.5" stroke-dasharray="3,2"/>
+          <circle r="3.5" fill="#2563EB"><animateMotion dur="1.8s" repeatCount="indefinite" path="M0,40 Q50,24 100,40"/></circle>
+          <circle r="3.5" fill="#2563EB" opacity=".55"><animateMotion dur="1.8s" begin="-0.6s" repeatCount="indefinite" path="M0,40 Q50,24 100,40"/></circle>
+          <circle r="3.5" fill="#2563EB" opacity=".25"><animateMotion dur="1.8s" begin="-1.2s" repeatCount="indefinite" path="M0,40 Q50,24 100,40"/></circle>
+          <circle r="3.5" fill="#EF4444"><animateMotion dur="1.8s" repeatCount="indefinite" path="M100,60 Q50,76 0,60"/></circle>
+          <circle r="3.5" fill="#EF4444" opacity=".55"><animateMotion dur="1.8s" begin="-0.6s" repeatCount="indefinite" path="M100,60 Q50,76 0,60"/></circle>
+          <circle r="3.5" fill="#EF4444" opacity=".25"><animateMotion dur="1.8s" begin="-1.2s" repeatCount="indefinite" path="M100,60 Q50,76 0,60"/></circle>
+        </svg>
+      </div>
+      <div class="arch-node n-trainee">
+        <svg viewBox="0 0 160 88" xmlns="http://www.w3.org/2000/svg" style="width:100%;margin-bottom:1rem">
+          <rect x="42" y="3" width="56" height="82" rx="9" fill="#FEE2E2" stroke="#EF4444" stroke-width="1.5"/>
+          <rect x="48" y="13" width="44" height="56" rx="3" fill="#fff" stroke="#FECACA" stroke-width="1"/>
+          <polyline points="52,41 57,41 60,29 63,41 68,41 71,34 74,49 77,41 88,41" fill="none" stroke="#EF4444" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+          <circle cx="70" cy="78" r="4" fill="none" stroke="#EF4444" stroke-width="1.5"/>
+          <path d="M 104,32 Q 113,44 104,56" fill="none" stroke="#EF4444" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M 110,25 Q 122,44 110,63" fill="none" stroke="#EF4444" stroke-width="1" stroke-linecap="round" opacity=".4"/>
+        </svg>
+        <div class="arch-nt">Bystander Side</div>
+        <ul class="arch-list">
+          <li>Follows target compression signal</li>
+          <li>Receives pacing cues</li>
+          <li>Sees real-time correction feedback</li>
+          <li>Receives verbal guidance from expert/dispatch</li>
+        </ul>
+      </div>
+    </div>
+    <div class="tech-pills" aria-label="Prototype inputs">
+      <span class="tech-pill">Connected sensing input</span>
+      <span class="tech-pill">Pacing cue output</span>
+      <span class="tech-pill">Live signal transmission</span>
+      <span class="tech-pill">Expert / bystander views</span>
+      <span class="tech-pill">Session review data</span>
+    </div>
+  </div>
+</section>
+
+<section class="alt" id="collaboration">
+  <div class="inner">
+    <div class="eyebrow">Alignment</div>
+    <div class="sec-title">Translating Clinical Priorities into Product Simplicity</div>
+    <p class="sec-sub">The founder brought the clinical lens, so many discussions naturally centered on CPR quality and medical usefulness. My role was to keep translating that into product decisions an untrained bystander could realistically interpret and act on during active compressions.</p>
+    <div class="hypo-box">
+      <div class="hypo-label">Alignment Focus</div>
+      <p>Lightweight interaction flows, wireframe concepts, and annotated feedback models helped make tradeoffs visible.</p>
+      <ul class="scan-list" style="margin-top:.75rem">
+        <li>Compared <strong>verbal-only coaching</strong> against multimodal guidance.</li>
+        <li>Compared <strong>target color ring</strong> feedback against waveform matching.</li>
+        <li>Shifted the discussion from clinical possibility to bystander usability: what could someone actually understand and act on?</li>
+      </ul>
+    </div>
+    <div style="margin-top:1rem;border:1px solid #E2E8F0;border-radius:16px;background:#F8FAFC;padding:1rem 1rem 1.1rem">
+      <div style="font-size:.68rem;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#94A3B8;margin-bottom:.7rem">Example alignment artifact</div>
+      <div class="alignment-artifact-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem">
+        <div style="background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:.9rem">
+          <div style="font-size:.72rem;font-weight:800;color:#64748B;letter-spacing:.6px;text-transform:uppercase;margin-bottom:.5rem">Concept A · Target Color Ring</div>
+          <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;margin:0 auto .65rem">
+            <circle cx="110" cy="66" r="48" fill="#FEE2E2" stroke="#FECACA" stroke-width="2"/>
+            <circle cx="110" cy="66" r="34" fill="#FEF3C7" stroke="#FDE68A" stroke-width="2"/>
+            <circle cx="110" cy="66" r="20" fill="#DCFCE7" stroke="#BBF7D0" stroke-width="2"/>
+            <circle cx="110" cy="66" r="9" fill="#16A34A"/>
+            <circle cx="150" cy="91" r="6" fill="#2563EB" stroke="#ffffff" stroke-width="2"/>
+            <line x1="150" y1="91" x2="162" y2="101" stroke="#2563EB" stroke-width="1.5"/>
+            <text x="166" y="106" text-anchor="start" font-size="8.5" fill="#2563EB" font-family="-apple-system,sans-serif">current push</text>
+            <text x="110" y="129" text-anchor="middle" font-size="8" fill="#6B7280" font-family="-apple-system,sans-serif">feedback is based on which color ring the user hits</text>
+          </svg>
+          <div style="display:flex;flex-direction:column;gap:.28rem">
+            <div style="font-size:.68rem;color:#374151;display:flex;gap:.35rem"><span style="width:6px;height:6px;border-radius:999px;background:#10B981;margin-top:.37rem;flex-shrink:0"></span><span>Clear target for how hard to push</span></div>
+            <div style="font-size:.68rem;color:#374151;display:flex;gap:.35rem"><span style="width:6px;height:6px;border-radius:999px;background:#EF4444;margin-top:.37rem;flex-shrink:0"></span><span>Feedback depends on ring color rather than a continuous comparison</span></div>
+          </div>
+        </div>
+        <div style="background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:.9rem">
+          <div style="font-size:.72rem;font-weight:800;color:#2563EB;letter-spacing:.6px;text-transform:uppercase;margin-bottom:.5rem">Concept B · Waveform Matching</div>
+          <svg viewBox="0 0 240 140" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;margin:0 auto .65rem">
+            <line x1="18" y1="112" x2="222" y2="112" stroke="#E5E7EB"/>
+            <line x1="90" y1="24" x2="90" y2="112" stroke="#16A34A" stroke-width="1.5" stroke-dasharray="4,3"/>
+            <text x="90" y="18" text-anchor="middle" font-size="8" font-weight="700" fill="#16A34A" font-family="-apple-system,sans-serif">MATCH</text>
+            <polyline points="18,78 30,42 42,78 68,78 80,42 92,78 118,78 130,42 142,78 168,78 180,42 192,78 218,78" fill="none" stroke="#2563EB" stroke-width="2.4" stroke-linejoin="round"/>
+            <polyline points="90,98 102,60 114,98 140,98 152,66 164,98 190,98 202,54 214,98" fill="none" stroke="#EF4444" stroke-width="2.4" stroke-linejoin="round"/>
+            <text x="48" y="132" font-size="8" fill="#2563EB" font-family="-apple-system,sans-serif">blue = target</text>
+            <text x="140" y="132" font-size="8" fill="#EF4444" font-family="-apple-system,sans-serif">red = responder compressions</text>
+          </svg>
+          <div style="display:flex;flex-direction:column;gap:.28rem">
+            <div style="font-size:.68rem;color:#374151;display:flex;gap:.35rem"><span style="width:6px;height:6px;border-radius:999px;background:#10B981;margin-top:.37rem;flex-shrink:0"></span><span>Lets the user compare their red waveform against the blue target</span></div>
+            <div style="font-size:.68rem;color:#374151;display:flex;gap:.35rem"><span style="width:6px;height:6px;border-radius:999px;background:#10B981;margin-top:.37rem;flex-shrink:0"></span><span>Shows both timing and compression force in one visual model</span></div>
+          </div>
+        </div>
+      </div>
+      <p style="font-size:.74rem;color:#6B7280;line-height:1.55;margin-top:.8rem">This kind of side-by-side comparison helped make the decision concrete: which feedback model would be easier for a bystander to understand and act on during CPR?</p>
+    </div>
+    <div class="eyebrow" style="margin-top:2.25rem">Constraints I Had to Balance</div>
+    <div class="feat-grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
+      <div class="feat-card"><div class="feat-icon" style="background:#EFF6FF">🫀</div><h3>Clinical Usefulness</h3><p>Feedback had to map to CPR quality signals that would be meaningful for a clinician or dispatcher monitoring remotely.</p></div>
+      <div class="feat-card"><div class="feat-icon" style="background:#FEF2F2">⚡</div><h3>Emergency Usability</h3><p>Bystander guidance had to be simple, fast, and low-cognitive-load during active compressions.</p></div>
+      <div class="feat-card"><div class="feat-icon" style="background:#F0FDF4">🔧</div><h3>Technical Feasibility</h3><p>Sensing, pacing cues, visual feedback, and data transmission had to stay feasible for an early prototype.</p></div>
+      <div class="feat-card"><div class="feat-icon" style="background:#FAF5FF">🧪</div><h3>MVP Learning</h3><p>The first version needed to test the core interaction before adding expert-side analytics or differentiated workflows.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <div class="inner">
+    <div class="eyebrow">Design Decisions</div>
+    <div class="sec-title">Decisions That Turned Ambiguity into Product Direction</div>
+    <p class="sec-sub">Each card shows the tradeoff, the design decision, and the product impact.</p>
+    <div class="decisions-grid">
+      <div class="decision">
+        <div class="decision-quote"><blockquote>Rhythm can be coached. Force has to be translated.</blockquote></div>
+        <div class="decision-body">
+          <div class="decision-tag">The Core Challenge</div>
+          <ul class="decision-points"><li><strong>Tradeoff:</strong> Rhythm could be coached verbally, but force-related movement was harder to explain.</li><li><strong>Decision:</strong> Treat force as a feedback problem, not just an instruction problem.</li><li><strong>Impact:</strong> Reframed the product around translating physical action into guidance.</li></ul>
+          <svg viewBox="0 0 440 152" style="width:100%;margin-top:1.25rem;display:block" xmlns="http://www.w3.org/2000/svg">
+            <!-- Left: Rhythm -->
+            <rect x="0" y="0" width="195" height="148" rx="10" fill="#F0FDF4" stroke="#BBF7D0" stroke-width="1.5"/>
+            <text x="97" y="18" text-anchor="middle" font-size="10" font-weight="700" fill="#16A34A" font-family="-apple-system,sans-serif">Rhythm / Pace</text>
+            <rect x="18" y="26" width="159" height="24" rx="6" fill="#fff" stroke="#D1FAE5" stroke-width="1.2"/>
+            <text x="97" y="42" text-anchor="middle" font-size="9" fill="#374151" font-family="-apple-system,sans-serif">🗣 Verbal instruction</text>
+            <line x1="97" y1="50" x2="97" y2="62" stroke="#16A34A" stroke-width="1.5"/>
+            <polygon points="93,60 97,68 101,60" fill="#16A34A"/>
+            <rect x="18" y="68" width="159" height="24" rx="6" fill="#D1FAE5" stroke="#6EE7B7" stroke-width="1.2"/>
+            <text x="97" y="84" text-anchor="middle" font-size="9" font-weight="600" fill="#065F46" font-family="-apple-system,sans-serif">User adjusts pace ✓</text>
+            <text x="97" y="107" text-anchor="middle" font-size="8.5" fill="#6B7280" font-family="-apple-system,sans-serif">"Push faster" → user can act on this</text>
+            <rect x="40" y="120" width="114" height="20" rx="10" fill="#D1FAE5"/>
+            <text x="97" y="133" text-anchor="middle" font-size="9" font-weight="700" fill="#065F46" font-family="-apple-system,sans-serif">✓ Directly communicable</text>
+            <!-- vs -->
+            <text x="220" y="82" text-anchor="middle" font-size="13" font-weight="700" fill="#CBD5E1" font-family="-apple-system,sans-serif">vs</text>
+            <!-- Right: Force -->
+            <rect x="245" y="0" width="195" height="148" rx="10" fill="#FEF2F2" stroke="#FECACA" stroke-width="1.5"/>
+            <text x="342" y="18" text-anchor="middle" font-size="10" font-weight="700" fill="#DC2626" font-family="-apple-system,sans-serif">Force / Quality</text>
+            <rect x="263" y="26" width="159" height="24" rx="6" fill="#fff" stroke="#FECACA" stroke-width="1.2"/>
+            <text x="342" y="42" text-anchor="middle" font-size="9" fill="#374151" font-family="-apple-system,sans-serif">🗣 Verbal instruction</text>
+            <line x1="342" y1="50" x2="342" y2="62" stroke="#EF4444" stroke-width="1.5"/>
+            <polygon points="338,60 342,68 346,60" fill="#EF4444"/>
+            <rect x="263" y="68" width="159" height="24" rx="6" fill="#FEE2E2" stroke="#FCA5A5" stroke-width="1.2"/>
+            <text x="342" y="80" text-anchor="middle" font-size="9" font-weight="600" fill="#991B1B" font-family="-apple-system,sans-serif">No intuitive frame of reference</text>
+            <text x="342" y="107" text-anchor="middle" font-size="8.5" fill="#6B7280" font-family="-apple-system,sans-serif">"Push harder" → how hard is hard?</text>
+            <rect x="285" y="120" width="114" height="20" rx="10" fill="#FEE2E2"/>
+            <text x="342" y="133" text-anchor="middle" font-size="9" font-weight="700" fill="#991B1B" font-family="-apple-system,sans-serif">✗ Requires translation</text>
+          </svg>
+        </div>
+      </div>
+      <div class="decision">
+        <div class="decision-quote"><blockquote>Guidance had to reduce cognitive load, not add to it.</blockquote></div>
+        <div class="decision-body">
+          <div class="decision-tag">Advocating for the Bystander</div>
+          <ul class="decision-points"><li><strong>Tradeoff:</strong> Verbal-only coaching required the bystander to listen, interpret, and act at the same time.</li><li><strong>Decision:</strong> Distribute guidance across pacing cues, visual feedback, and voice.</li><li><strong>Impact:</strong> Shifted the product from “better instructions” toward real-time physical guidance.</li></ul>
+          <svg viewBox="0 0 440 170" style="width:100%;margin-top:1.25rem;display:block" xmlns="http://www.w3.org/2000/svg">
+            <rect x="0" y="0" width="195" height="163" rx="10" fill="#FEF2F2" stroke="#FECACA" stroke-width="1.5"/>
+            <text x="97" y="17" text-anchor="middle" font-size="10" font-weight="700" fill="#DC2626" font-family="-apple-system,sans-serif">Verbal Only</text>
+            <rect x="18" y="24" width="159" height="22" rx="6" fill="#fff" stroke="#FECACA" stroke-width="1.2"/>
+            <text x="97" y="39" text-anchor="middle" font-size="9" fill="#374151" font-family="-apple-system,sans-serif">One overloaded channel</text>
+            <line x1="97" y1="46" x2="97" y2="56" stroke="#EF4444" stroke-width="1"/>
+            <text x="97" y="67" text-anchor="middle" font-size="8" fill="#6B7280" font-family="-apple-system,sans-serif">All tasks compete simultaneously</text>
+            <rect x="14" y="74" width="52" height="40" rx="6" fill="#FEE2E2" stroke="#FCA5A5" stroke-width="1"/>
+            <text x="40" y="90" text-anchor="middle" font-size="8" font-weight="600" fill="#991B1B" font-family="-apple-system,sans-serif">Listen</text>
+            <text x="40" y="103" text-anchor="middle" font-size="7" fill="#991B1B" font-family="-apple-system,sans-serif">to words</text>
+            <rect x="71" y="74" width="52" height="40" rx="6" fill="#FEE2E2" stroke="#FCA5A5" stroke-width="1"/>
+            <text x="97" y="90" text-anchor="middle" font-size="8" font-weight="600" fill="#991B1B" font-family="-apple-system,sans-serif">Interpret</text>
+            <text x="97" y="103" text-anchor="middle" font-size="7" fill="#991B1B" font-family="-apple-system,sans-serif">meaning</text>
+            <rect x="128" y="74" width="52" height="40" rx="6" fill="#FEE2E2" stroke="#FCA5A5" stroke-width="1"/>
+            <text x="154" y="90" text-anchor="middle" font-size="8" font-weight="600" fill="#991B1B" font-family="-apple-system,sans-serif">Execute</text>
+            <text x="154" y="103" text-anchor="middle" font-size="7" fill="#991B1B" font-family="-apple-system,sans-serif">physically</text>
+            <rect x="38" y="128" width="118" height="20" rx="10" fill="#FEE2E2"/>
+            <text x="97" y="141" text-anchor="middle" font-size="9" font-weight="700" fill="#991B1B" font-family="-apple-system,sans-serif">&#x2717; High cognitive load</text>
+            <line x1="200" y1="82" x2="242" y2="82" stroke="#CBD5E1" stroke-width="1.5"/>
+            <polygon points="238,78 246,82 238,86" fill="#CBD5E1"/>
+            <rect x="245" y="0" width="195" height="163" rx="10" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="1.5"/>
+            <text x="342" y="17" text-anchor="middle" font-size="10" font-weight="700" fill="#1D4ED8" font-family="-apple-system,sans-serif">Multimodal</text>
+            <rect x="263" y="24" width="159" height="22" rx="6" fill="#fff" stroke="#BFDBFE" stroke-width="1.2"/>
+            <text x="342" y="39" text-anchor="middle" font-size="9" fill="#374151" font-family="-apple-system,sans-serif">3 dedicated channels</text>
+            <line x1="342" y1="46" x2="342" y2="56" stroke="#2563EB" stroke-width="1"/>
+            <text x="342" y="67" text-anchor="middle" font-size="8" fill="#6B7280" font-family="-apple-system,sans-serif">Each modality handles one job</text>
+            <rect x="259" y="74" width="52" height="40" rx="6" fill="#DBEAFE" stroke="#93C5FD" stroke-width="1"/>
+            <text x="285" y="90" text-anchor="middle" font-size="8" font-weight="600" fill="#1D4ED8" font-family="-apple-system,sans-serif">Pacing</text>
+            <text x="285" y="103" text-anchor="middle" font-size="7" fill="#1D4ED8" font-family="-apple-system,sans-serif">rhythm</text>
+            <rect x="316" y="74" width="52" height="40" rx="6" fill="#DBEAFE" stroke="#93C5FD" stroke-width="1"/>
+            <text x="342" y="90" text-anchor="middle" font-size="8" font-weight="600" fill="#1D4ED8" font-family="-apple-system,sans-serif">Visual</text>
+            <text x="342" y="103" text-anchor="middle" font-size="7" fill="#1D4ED8" font-family="-apple-system,sans-serif">force</text>
+            <rect x="373" y="74" width="52" height="40" rx="6" fill="#DBEAFE" stroke="#93C5FD" stroke-width="1"/>
+            <text x="399" y="90" text-anchor="middle" font-size="8" font-weight="600" fill="#1D4ED8" font-family="-apple-system,sans-serif">Voice</text>
+            <text x="399" y="103" text-anchor="middle" font-size="7" fill="#1D4ED8" font-family="-apple-system,sans-serif">nuance</text>
+            <rect x="283" y="128" width="118" height="20" rx="10" fill="#DBEAFE"/>
+            <text x="342" y="141" text-anchor="middle" font-size="9" font-weight="700" fill="#1D4ED8" font-family="-apple-system,sans-serif">&#x2713; Distributed load</text>
+          </svg>
+        </div>
+      </div>
+      <div class="decision">
+        <div class="decision-quote"><blockquote>One signal, two dimensions of feedback.</blockquote></div>
+        <div class="decision-body">
+          <div class="decision-tag">Interface Tradeoff</div>
+          <ul class="decision-points"><li><strong>Tradeoff:</strong> A color ring could show force, but rhythm still required a second signal.</li><li><strong>Decision:</strong> Use a scrolling waveform where height represents force and spacing represents rhythm.</li><li><strong>Impact:</strong> Reduced split attention by giving users one continuous signal to follow.</li></ul>
+          <svg viewBox="0 0 440 172" style="width:100%;margin-top:1.25rem;display:block" xmlns="http://www.w3.org/2000/svg">
+            <rect x="0" y="0" width="195" height="172" rx="10" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1.5"/>
+            <text x="97" y="18" text-anchor="middle" font-size="10" font-weight="600" fill="#64748B" font-family="-apple-system,sans-serif">Concentric Ring</text>
+            <circle cx="97" cy="88" r="48" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="1.5"/>
+            <circle cx="97" cy="88" r="33" fill="#DBEAFE" stroke="#93C5FD" stroke-width="1.5"/>
+            <circle cx="97" cy="88" r="18" fill="#BFDBFE" stroke="#60A5FA" stroke-width="1.5"/>
+            <circle cx="97" cy="88" r="7" fill="#2563EB"/>
+            <line x1="97" y1="26" x2="97" y2="54" stroke="#475569" stroke-width="2"/>
+            <polygon points="90,52 97,64 104,52" fill="#475569"/>
+            <rect x="44" y="150" width="52" height="16" rx="8" fill="#D1FAE5"/>
+            <text x="70" y="161" text-anchor="middle" font-size="9" font-weight="600" fill="#065F46" font-family="-apple-system,sans-serif">✓ Force</text>
+            <rect x="106" y="150" width="46" height="16" rx="8" fill="#FEE2E2"/>
+            <text x="129" y="161" text-anchor="middle" font-size="9" font-weight="600" fill="#991B1B" font-family="-apple-system,sans-serif">✗ Pace</text>
+            <text x="220" y="90" text-anchor="middle" font-size="13" font-weight="700" fill="#64748B" font-family="-apple-system,sans-serif">vs</text>
+            <rect x="245" y="0" width="195" height="172" rx="10" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1.5"/>
+            <text x="342" y="18" text-anchor="middle" font-size="10" font-weight="600" fill="#64748B" font-family="-apple-system,sans-serif">Scrolling Waveform</text>
+            <line x1="260" y1="115" x2="428" y2="115" stroke="#CBD5E1" stroke-width="1"/>
+            <polyline points="268,115 274,115 278,78 282,115 298,115" fill="none" stroke="#2563EB" stroke-width="2" stroke-linejoin="round"/>
+            <polyline points="318,115 324,115 328,58 332,115 348,115" fill="none" stroke="#2563EB" stroke-width="2" stroke-linejoin="round"/>
+            <polyline points="368,115 374,115 378,68 382,115 398,115" fill="none" stroke="#2563EB" stroke-width="2" stroke-linejoin="round"/>
+            <line x1="256" y1="38" x2="256" y2="115" stroke="#1E3A5F" stroke-width="1" stroke-dasharray="3,2"/>
+            <polygon points="252,40 256,30 260,40" fill="#1E3A5F"/>
+            <polygon points="252,113 256,123 260,113" fill="#1E3A5F"/>
+            <text x="260" y="58" font-size="8" fill="#1E3A5F" font-family="-apple-system,sans-serif">height</text>
+            <text x="260" y="69" font-size="8" fill="#1E3A5F" font-family="-apple-system,sans-serif">= force</text>
+            <line x1="278" y1="129" x2="328" y2="129" stroke="#F59E0B" stroke-width="1" stroke-dasharray="3,2"/>
+            <polygon points="280,125 270,129 280,133" fill="#F59E0B"/>
+            <polygon points="326,125 336,129 326,133" fill="#F59E0B"/>
+            <text x="303" y="142" text-anchor="middle" font-size="8" fill="#F59E0B" font-family="-apple-system,sans-serif">spacing = pace</text>
+            <rect x="289" y="150" width="52" height="16" rx="8" fill="#D1FAE5"/>
+            <text x="315" y="161" text-anchor="middle" font-size="9" font-weight="600" fill="#065F46" font-family="-apple-system,sans-serif">✓ Force</text>
+            <rect x="351" y="150" width="46" height="16" rx="8" fill="#D1FAE5"/>
+            <text x="374" y="161" text-anchor="middle" font-size="9" font-weight="600" fill="#065F46" font-family="-apple-system,sans-serif">✓ Pace</text>
+          </svg>
+        </div>
+      </div>
+      <div class="decision">
+        <div class="decision-quote"><blockquote>Validate the feedback loop before adding complexity.</blockquote></div>
+        <div class="decision-body">
+          <div class="decision-tag">Sequencing Decision</div>
+          <ul class="decision-points"><li><strong>Tradeoff:</strong> Expert and bystander views would eventually need different levels of detail.</li><li><strong>Decision:</strong> Start with a shared waveform model to validate the core feedback loop first.</li><li><strong>Impact:</strong> Protected the first version from premature complexity.</li></ul>
+          <svg viewBox="0 0 440 152" style="width:100%;margin-top:1.25rem;display:block" xmlns="http://www.w3.org/2000/svg">
+            <!-- MVP box -->
+            <rect x="0" y="0" width="263" height="148" rx="10" fill="#F0FDF4" stroke="#16A34A" stroke-width="2"/>
+            <text x="14" y="16" font-size="9" font-weight="700" letter-spacing="1" fill="#16A34A" font-family="-apple-system,sans-serif">MVP SCOPE</text>
+            <rect x="14" y="24" width="233" height="24" rx="6" fill="#D1FAE5" stroke="#6EE7B7" stroke-width="1"/>
+            <text x="130" y="40" text-anchor="middle" font-size="9" font-weight="600" fill="#065F46" font-family="-apple-system,sans-serif">&#x2713; Shared scrolling waveform</text>
+            <rect x="14" y="56" width="233" height="24" rx="6" fill="#D1FAE5" stroke="#6EE7B7" stroke-width="1"/>
+            <text x="130" y="72" text-anchor="middle" font-size="9" font-weight="600" fill="#065F46" font-family="-apple-system,sans-serif">&#x2713; Compression force + rhythm</text>
+            <rect x="14" y="88" width="233" height="24" rx="6" fill="#D1FAE5" stroke="#6EE7B7" stroke-width="1"/>
+            <text x="130" y="104" text-anchor="middle" font-size="9" font-weight="600" fill="#065F46" font-family="-apple-system,sans-serif">&#x2713; Real-time match feedback</text>
+            <text x="130" y="132" text-anchor="middle" font-size="8.5" font-weight="600" fill="#16A34A" font-family="-apple-system,sans-serif">Validate the core loop first</text>
+            <!-- Arrow -->
+            <line x1="272" y1="74" x2="284" y2="74" stroke="#94A3B8" stroke-width="1.5"/>
+            <polygon points="282,70 290,74 282,78" fill="#94A3B8"/>
+            <!-- Deferred box -->
+            <rect x="293" y="0" width="147" height="148" rx="10" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="5,3"/>
+            <text x="310" y="16" font-size="9" font-weight="700" letter-spacing="1" fill="#94A3B8" font-family="-apple-system,sans-serif">DEFERRED</text>
+            <rect x="306" y="24" width="120" height="20" rx="5" fill="#F1F5F9" stroke="#E2E8F0" stroke-width="1"/>
+            <text x="366" y="38" text-anchor="middle" font-size="8.5" fill="#94A3B8" font-family="-apple-system,sans-serif">Expert analytics</text>
+            <rect x="306" y="52" width="120" height="20" rx="5" fill="#F1F5F9" stroke="#E2E8F0" stroke-width="1"/>
+            <text x="366" y="66" text-anchor="middle" font-size="8.5" fill="#94A3B8" font-family="-apple-system,sans-serif">Differentiated UX</text>
+            <rect x="306" y="80" width="120" height="20" rx="5" fill="#F1F5F9" stroke="#E2E8F0" stroke-width="1"/>
+            <text x="366" y="94" text-anchor="middle" font-size="8.5" fill="#94A3B8" font-family="-apple-system,sans-serif">Coaching tools</text>
+            <rect x="306" y="108" width="120" height="20" rx="5" fill="#F1F5F9" stroke="#E2E8F0" stroke-width="1"/>
+            <text x="366" y="122" text-anchor="middle" font-size="8.5" fill="#94A3B8" font-family="-apple-system,sans-serif">Trend history</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="alt" id="craft">
+  <div class="inner">
+    <div class="eyebrow">Interaction Design</div>
+    <div class="sec-title">Turning Real-Time Feedback into Actionable Guidance</div>
+    <p class="sec-sub">Once the feedback model was defined, the next challenge was making it immediately usable. Each interaction choice was designed to help the bystander understand what to do in the moment while still giving the remote medical expert enough context to monitor performance.</p>
+
+    <div class="interaction-grid">
+
+      <div class="interaction-card">
+        <div class="interaction-copy">
+          <h3>One primary signal for force and rhythm</h3>
+          <p>The waveform combines force-related movement and rhythm in one continuous signal.</p>
+        </div>
+        <div class="interaction-visual">
+          <div class="interaction-caption">Waveform model</div>
+          <div class="mini-ui">
+            <div class="mini-header"><span>CPR Guidance</span><span class="mini-live">LIVE</span></div>
+            <div class="mini-chart">
+              <svg viewBox="0 0 360 150" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block">
+                <line x1="22" y1="122" x2="340" y2="122" stroke="#E5E7EB"/>
+                <line x1="118" y1="24" x2="118" y2="122" stroke="#16A34A" stroke-width="1.5" stroke-dasharray="4,3"/>
+                <text x="118" y="18" text-anchor="middle" font-size="9" font-weight="700" fill="#16A34A" font-family="-apple-system,sans-serif">MATCH HERE</text>
+                <polyline points="22,90 34,90 42,48 50,90 76,90 88,90 96,36 104,90 130,90 142,90 150,52 158,90 184,90 196,90 204,42 212,90 238,90 250,90 258,58 266,90 292,90 304,90 312,45 320,90 340,90" fill="none" stroke="#2563EB" stroke-width="2.2" stroke-linejoin="round"/>
+                <line x1="42" y1="137" x2="96" y2="137" stroke="#F59E0B" stroke-width="1.2" stroke-dasharray="3,2"/>
+                <text x="69" y="148" text-anchor="middle" font-size="8" fill="#F59E0B" font-family="-apple-system,sans-serif">spacing = rhythm</text>
+                <line x1="332" y1="48" x2="332" y2="90" stroke="#1E3A5F" stroke-width="1.2" stroke-dasharray="3,2"/>
+                <text x="338" y="70" font-size="8" fill="#1E3A5F" font-family="-apple-system,sans-serif">height = force</text>
+              </svg>
+              <div style="display:flex;gap:1rem;align-items:center;justify-content:flex-start;padding:.4rem .2rem 0;font-size:.64rem;color:#6B7280;font-weight:600">
+                <div style="display:flex;align-items:center;gap:.35rem"><span style="width:10px;height:10px;border-radius:999px;background:#2563EB;display:inline-block"></span>Target</div>
+              </div>
+    </div>
+              </div>
+            </div>
+            <div style="display:flex;gap:.9rem;align-items:center;justify-content:flex-start;padding:.45rem .85rem .75rem;font-size:.58rem;color:#6B7280;font-weight:600;border-top:1px solid #F1F5F9">
+              <div style="display:flex;align-items:center;gap:.3rem"><span style="width:9px;height:9px;border-radius:999px;background:#2563EB;display:inline-block"></span>Target</div>
+              <div style="display:flex;align-items:center;gap:.3rem"><span style="width:9px;height:9px;border-radius:999px;background:#EF4444;display:inline-block"></span>Responder compressions</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="interaction-card">
+        <div class="interaction-copy">
+          <h3>Clear visual priority for the bystander</h3>
+          <p>Target, user compression, match point, and correction message come before secondary metrics.</p>
+        </div>
+        <div class="interaction-visual">
+          <div class="interaction-caption">Bystander feedback hierarchy</div>
+          <div class="mini-ui">
+            <div class="mini-header"><span>CPR Guidance</span><span class="mini-live">LIVE</span></div>
+            <div class="mini-body">
+              <div class="mini-chart">
+                <svg viewBox="0 0 250 130" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block">
+                  <line x1="20" y1="112" x2="232" y2="112" stroke="#E5E7EB"/>
+                  <line x1="78" y1="26" x2="78" y2="112" stroke="#16A34A" stroke-width="1.5" stroke-dasharray="4,3"/>
+                  <text x="78" y="20" text-anchor="middle" font-size="8" font-weight="700" fill="#16A34A" font-family="-apple-system,sans-serif">MATCH</text>
+                  <polyline points="20,72 32,38 44,72 68,72 78,38 88,72 112,72 124,38 136,72 160,72 172,38 184,72 208,72 220,38 232,72" fill="none" stroke="#2563EB" stroke-width="2"/>
+                  <polyline points="78,84 88,44 98,84 122,84 134,50 146,84 170,84 182,56 194,84 218,84" fill="none" stroke="#EF4444" stroke-width="2"/>
+                </svg>
+              </div>
+
+              <div class="mini-panel">
+                <div class="mini-label">Match Rate</div>
+                <div class="mini-big">58%</div>
+                <div class="mini-label">Feedback</div>
+                <div class="mini-status"><span>×</span>Off Target</div>
+                <div class="mini-desc">Push a little deeper.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="interaction-card">
+        <div class="interaction-copy">
+          <h3>Immediate correction instead of raw interpretation</h3>
+          <p>Feedback states turn performance data into one action the bystander can take in the moment.</p>
+        </div>
+        <div class="interaction-visual">
+          <div class="interaction-caption">Correction feedback</div>
+          <div class="mini-ui">
+            <div class="mini-header"><span>CPR Guidance</span><span class="mini-live">LIVE</span></div>
+            <div class="mini-panel" style="padding:1.1rem">
+              <div class="mini-label">Feedback</div>
+              <div style="display:flex;align-items:center;gap:.6rem;margin:.15rem 0 .25rem">
+                <div style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#FEE2E2;color:#991B1B;font-size:.9rem;font-weight:800">×</div>
+                <div>
+                  <div style="font-size:1rem;font-weight:800;color:#DC2626;line-height:1.1">Off Target</div>
+                  <div style="font-size:.72rem;color:#6B7280;margin-top:.2rem">Push a little deeper.</div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section id="demo">
+  <div class="inner">
+    <div class="eyebrow">Interface Snapshots</div>
+    <div class="sec-title">Two Interfaces, One Shared Feedback Model</div>
+    <p class="sec-sub">These snapshots show how the shared waveform model supports two different roles. The bystander interface keeps feedback focused on the immediate task: follow the target, compare each compression, and adjust quickly. The expert interface uses the same signal with more monitoring context, helping the remote medical expert understand performance and guide the bystander verbally.</p>
+
+    <div class="demo-tabs">
+      <button class="demo-tab active" onclick="switchTab('bystander',this)">Bystander Interface</button>
+      <button class="demo-tab" onclick="switchTab('expert',this)">Expert / Dispatch Interface</button>
+    </div>
+
+    <!-- BYSTANDER -->
+    <div id="tab-bystander">
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <div class="iface-header">
+            <div class="h-conn"><span class="h-conn-dot"></span>Connected</div>
+            <div class="h-title">CPR Guidance</div>
+            <div class="h-right"><span class="h-live">LIVE</span><span class="h-time">00:01:26</span></div>
+          </div>
+          <div class="iface-body">
+            <div class="chart-col">
+              <svg viewBox="0 0 490 252" xmlns="http://www.w3.org/2000/svg">
+                <defs><clipPath id="by-clip"><rect x="153" y="0" width="340" height="260"/></clipPath></defs>
+                <text transform="rotate(-90,10,127)" text-anchor="middle" font-size="8" fill="#94A3B8" font-family="-apple-system,sans-serif">Compression Depth (cm)</text>
+                <line x1="45" y1="42" x2="477" y2="42" stroke="#E2E8F0" stroke-width=".5" stroke-dasharray="3,3"/>
+                <line x1="45" y1="103.7" x2="477" y2="103.7" stroke="#E2E8F0" stroke-width=".5" stroke-dasharray="3,3"/>
+                <line x1="45" y1="165.3" x2="477" y2="165.3" stroke="#E2E8F0" stroke-width=".5" stroke-dasharray="3,3"/>
+                <line x1="45" y1="227" x2="477" y2="227" stroke="#E2E8F0" stroke-width=".5"/>
+                <line x1="45" y1="42" x2="45" y2="227" stroke="#E2E8F0" stroke-width=".5"/>
+                <text x="40" y="45" text-anchor="end" font-size="8.5" fill="#94A3B8" font-family="-apple-system,sans-serif">6</text>
+                <text x="40" y="107" text-anchor="end" font-size="8.5" fill="#94A3B8" font-family="-apple-system,sans-serif">4</text>
+                <text x="40" y="168" text-anchor="end" font-size="8.5" fill="#94A3B8" font-family="-apple-system,sans-serif">2</text>
+                <text x="40" y="230" text-anchor="end" font-size="8.5" fill="#94A3B8" font-family="-apple-system,sans-serif">0</text>
+                <line x1="133" y1="227" x2="133" y2="231" stroke="#CBD5E1" stroke-width="1"/>
+                <line x1="221" y1="227" x2="221" y2="231" stroke="#CBD5E1" stroke-width="1"/>
+                <line x1="309" y1="227" x2="309" y2="231" stroke="#CBD5E1" stroke-width="1"/>
+                <line x1="397" y1="227" x2="397" y2="231" stroke="#CBD5E1" stroke-width="1"/>
+                <text x="261" y="244" text-anchor="middle" font-size="8.5" fill="#94A3B8" font-family="-apple-system,sans-serif">Time →</text>
+                <line x1="50" y1="10" x2="66" y2="10" stroke="#2563EB" stroke-width="2"/>
+                <text x="70" y="13" font-size="8.5" fill="#374151" font-family="-apple-system,sans-serif">Target (100–120 cpm)</text>
+                <line x1="200" y1="10" x2="216" y2="10" stroke="#EF4444" stroke-width="2"/>
+                <text x="220" y="13" font-size="8.5" fill="#374151" font-family="-apple-system,sans-serif">Your Compressions</text>
+                <line x1="153" y1="34" x2="153" y2="227" stroke="#16A34A" stroke-width="1.2" stroke-dasharray="4,3"/>
+                <text x="153" y="30" text-anchor="middle" font-size="8" font-weight="700" fill="#16A34A" font-family="-apple-system,sans-serif">MATCH HERE</text>
+                <polyline fill="none" stroke="#2563EB" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"
+                  points="45,126.8 49,107.2 53,89.3 57,74.4 61,63.6 65,58.1 69,58.1 73,63.6 77,74.4 81,89.3 85,107.2 89,126.8 93,146.4 97,164.3 101,179.2 105,190.0 109,195.5 113,195.5 117,190.0 121,179.2 125,164.3 129,146.4 133,126.8 137,107.2 141,89.3 145,74.4 149,63.6 153,58.1 157,58.1 161,63.6 165,74.4 169,89.3 173,107.2 177,126.8 181,146.4 185,164.3 189,179.2 193,190.0 197,195.5 201,195.5 205,190.0 209,179.2 213,164.3 217,146.4 221,126.8 225,107.2 229,89.3 233,74.4 237,63.6 241,58.1 245,58.1 249,63.6 253,74.4 257,89.3 261,107.2 265,126.8 269,146.4 273,164.3 277,179.2 281,190.0 285,195.5 289,195.5 293,190.0 297,179.2 301,164.3 305,146.4 309,126.8 313,107.2 317,89.3 321,74.4 325,63.6 329,58.1 333,58.1 337,63.6 341,74.4 345,89.3 349,107.2 353,126.8 357,146.4 361,164.3 365,179.2 369,190.0 373,195.5 377,195.5 381,190.0 385,179.2 389,164.3 393,146.4 397,126.8 401,107.2 405,89.3 409,74.4 413,63.6 417,58.1 421,58.1 425,63.6 429,74.4 433,89.3 437,107.2 441,126.8 445,146.4 449,164.3 453,179.2 457,190.0 461,195.5 465,195.5 469,190.0 473,179.2 477,164.3"/>
+                <polyline clip-path="url(#by-clip)" fill="none" stroke="#EF4444" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"
+                  points="45,149.9 49,136.8 53,124.9 57,114.9 61,107.8 65,104.1 69,104.1 73,107.8 77,114.9 81,124.9 85,136.8 89,149.9 93,163.0 97,174.9 101,184.9 105,192.0 109,195.7 113,195.7 117,192.0 121,184.9 125,174.9 129,163.0 133,149.9 137,136.8 141,124.9 145,114.9 149,107.8 153,104.1 157,104.1 161,107.8 165,114.9 169,124.9 173,136.8 177,149.9 181,163.0 185,174.9 189,184.9 193,192.0 197,195.7 201,195.7 205,192.0 209,184.9 213,174.9 217,163.0 221,149.9 225,136.8 229,124.9 233,114.9 237,107.8 241,104.1 245,104.1 249,107.8 253,114.9 257,124.9 261,136.8 265,149.9 269,163.0 273,174.9 277,184.9 281,192.0 285,195.7 289,195.7 293,192.0 297,184.9 301,174.9 305,163.0 309,149.9 313,136.8 317,124.9 321,114.9 325,107.8 329,104.1 333,104.1 337,107.8 341,114.9 345,124.9 349,136.8 353,149.9 357,163.0 361,174.9 365,184.9 369,192.0 373,195.7 377,195.7 381,192.0 385,184.9 389,174.9 393,163.0 397,149.9 401,136.8 405,124.9 409,114.9 413,107.8 417,104.1 421,104.1 425,107.8 429,114.9 433,124.9 437,136.8 441,149.9 445,163.0 449,174.9 453,184.9 457,192.0 461,195.7 465,195.7 469,192.0 473,184.9 477,174.9"/>
+                <circle cx="153" cy="58.1" r="5" fill="#16A34A"/>
+              </svg>
+            </div>
+            <div class="stats-col">
+              <div class="s-label">MATCH RATE</div>
+              <div class="s-big" style="color:#DC2626">58%</div>
+              <div class="s-sub">(100–120 cpm)</div>
+              <hr class="s-divider">
+              <div class="s-label">FEEDBACK</div>
+              <div class="s-status-row">
+                <div class="s-status-icon err">✕</div>
+                <div class="s-status-text" style="color:#DC2626">Off Target</div>
+              </div>
+              <div class="s-desc">Push a little deeper.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EXPERT -->
+    <div id="tab-expert" style="display:none">
+      <div class="expert-frame">
+        <div class="iface-header">
+          <div class="h-conn"><span class="h-conn-dot"></span>Connected</div>
+          <div class="h-title">CPR Expert View</div>
+          <div class="h-right"><span class="h-live">LIVE</span><span class="h-time">00:01:30</span><button class="h-btn">End Session</button></div>
+        </div>
+        <div class="iface-body">
+          <div class="chart-col">
+            <svg viewBox="0 0 490 252" xmlns="http://www.w3.org/2000/svg">
+              <defs><clipPath id="ex-clip"><rect x="153" y="0" width="340" height="260"/></clipPath></defs>
+              <text transform="rotate(-90,10,127)" text-anchor="middle" font-size="8" fill="#94A3B8" font-family="-apple-system,sans-serif">Compression Depth (cm)</text>
+              <line x1="45" y1="42" x2="477" y2="42" stroke="#E2E8F0" stroke-width=".5" stroke-dasharray="3,3"/>
+              <line x1="45" y1="103.7" x2="477" y2="103.7" stroke="#E2E8F0" stroke-width=".5" stroke-dasharray="3,3"/>
+              <line x1="45" y1="165.3" x2="477" y2="165.3" stroke="#E2E8F0" stroke-width=".5" stroke-dasharray="3,3"/>
+              <line x1="45" y1="227" x2="477" y2="227" stroke="#E2E8F0" stroke-width=".5"/>
+              <line x1="45" y1="42" x2="45" y2="227" stroke="#E2E8F0" stroke-width=".5"/>
+              <text x="40" y="45" text-anchor="end" font-size="8.5" fill="#94A3B8" font-family="-apple-system,sans-serif">6</text>
+              <text x="40" y="107" text-anchor="end" font-size="8.5" fill="#94A3B8" font-family="-apple-system,sans-serif">4</text>
+              <text x="40" y="168" text-anchor="end" font-size="8.5" fill="#94A3B8" font-family="-apple-system,sans-serif">2</text>
+              <text x="40" y="230" text-anchor="end" font-size="8.5" fill="#94A3B8" font-family="-apple-system,sans-serif">0</text>
+              <line x1="133" y1="227" x2="133" y2="231" stroke="#CBD5E1" stroke-width="1"/>
+              <line x1="221" y1="227" x2="221" y2="231" stroke="#CBD5E1" stroke-width="1"/>
+              <line x1="309" y1="227" x2="309" y2="231" stroke="#CBD5E1" stroke-width="1"/>
+              <line x1="397" y1="227" x2="397" y2="231" stroke="#CBD5E1" stroke-width="1"/>
+              <text x="261" y="244" text-anchor="middle" font-size="8.5" fill="#94A3B8" font-family="-apple-system,sans-serif">Time →</text>
+              <line x1="50" y1="10" x2="66" y2="10" stroke="#2563EB" stroke-width="2"/>
+              <text x="70" y="13" font-size="8.5" fill="#374151" font-family="-apple-system,sans-serif">Target (100–120 cpm)</text>
+              <line x1="210" y1="10" x2="226" y2="10" stroke="#EF4444" stroke-width="2"/>
+              <text x="230" y="13" font-size="8.5" fill="#374151" font-family="-apple-system,sans-serif">Responder Compressions</text>
+              <line x1="153" y1="34" x2="153" y2="227" stroke="#16A34A" stroke-width="1.2" stroke-dasharray="4,3"/>
+              <text x="153" y="30" text-anchor="middle" font-size="8" font-weight="700" fill="#16A34A" font-family="-apple-system,sans-serif">MATCH HERE</text>
+              <polyline fill="none" stroke="#2563EB" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"
+                points="45,126.8 49,107.2 53,89.3 57,74.4 61,63.6 65,58.1 69,58.1 73,63.6 77,74.4 81,89.3 85,107.2 89,126.8 93,146.4 97,164.3 101,179.2 105,190.0 109,195.5 113,195.5 117,190.0 121,179.2 125,164.3 129,146.4 133,126.8 137,107.2 141,89.3 145,74.4 149,63.6 153,58.1 157,58.1 161,63.6 165,74.4 169,89.3 173,107.2 177,126.8 181,146.4 185,164.3 189,179.2 193,190.0 197,195.5 201,195.5 205,190.0 209,179.2 213,164.3 217,146.4 221,126.8 225,107.2 229,89.3 233,74.4 237,63.6 241,58.1 245,58.1 249,63.6 253,74.4 257,89.3 261,107.2 265,126.8 269,146.4 273,164.3 277,179.2 281,190.0 285,195.5 289,195.5 293,190.0 297,179.2 301,164.3 305,146.4 309,126.8 313,107.2 317,89.3 321,74.4 325,63.6 329,58.1 333,58.1 337,63.6 341,74.4 345,89.3 349,107.2 353,126.8 357,146.4 361,164.3 365,179.2 369,190.0 373,195.5 377,195.5 381,190.0 385,179.2 389,164.3 393,146.4 397,126.8 401,107.2 405,89.3 409,74.4 413,63.6 417,58.1 421,58.1 425,63.6 429,74.4 433,89.3 437,107.2 441,126.8 445,146.4 449,164.3 453,179.2 457,190.0 461,195.5 465,195.5 469,190.0 473,179.2 477,164.3"/>
+              <polyline clip-path="url(#ex-clip)" fill="none" stroke="#EF4444" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"
+                points="45,131.5 49,113.2 53,96.5 57,82.6 61,72.5 65,67.3 69,67.3 73,72.5 77,82.6 81,96.5 85,113.2 89,131.5 93,149.8 97,166.5 101,180.4 105,190.5 109,195.7 113,195.7 117,190.5 121,180.4 125,166.5 129,149.8 133,131.5 137,113.2 141,96.5 145,82.6 149,72.5 153,67.3 157,67.3 161,72.5 165,82.6 169,96.5 173,113.2 177,131.5 181,149.8 185,166.5 189,180.4 193,190.5 197,195.7 201,195.7 205,190.5 209,180.4 213,166.5 217,149.8 221,131.5 225,113.2 229,96.5 233,82.6 237,72.5 241,67.3 245,67.3 249,72.5 253,82.6 257,96.5 261,113.2 265,131.5 269,149.8 273,166.5 277,180.4 281,190.5 285,195.7 289,195.7 293,190.5 297,180.4 301,166.5 305,149.8 309,131.5 313,113.2 317,96.5 321,82.6 325,72.5 329,67.3 333,67.3 337,72.5 341,82.6 345,96.5 349,113.2 353,131.5 357,149.8 361,166.5 365,180.4 369,190.5 373,195.7 377,195.7 381,190.5 385,180.4 389,166.5 393,149.8 397,131.5 401,113.2 405,96.5 409,82.6 413,72.5 417,67.3 421,67.3 425,72.5 429,82.6 433,96.5 437,113.2 441,131.5 445,149.8 449,166.5 453,180.4 457,190.5 461,195.7 465,195.7 469,190.5 473,180.4 477,166.5"/>
+              <circle cx="153" cy="58.1" r="5" fill="#16A34A"/>
+            </svg>
+          </div>
+          <div class="stats-col wide">
+            <div class="s-row2">
+              <div>
+                <div class="s-label">MATCH RATE</div>
+                <div class="s-big" style="color:#059669">96%</div>
+                <div class="s-sub">(100–120 cpm)</div>
+              </div>
+              <div>
+                <div class="s-label">STATUS</div>
+                <div class="s-status-row" style="margin-top:.3rem">
+                  <div class="s-status-icon ok">✓</div>
+                  <div class="s-status-text" style="color:#059669;font-size:.78rem">Match</div>
+                </div>
+                <div class="s-desc" style="margin-top:.25rem">Great compressions!</div>
+              </div>
+            </div>
+            <hr class="s-divider">
+            <div class="s-label">LIVE METRICS</div>
+            <div class="s-metrics-grid">
+              <div class="s-metric"><span class="s-metric-label">♥ Rate</span><span><span class="s-metric-val">108</span><span class="s-metric-unit">cpm</span></span></div>
+              <div class="s-metric"><span class="s-metric-label">↓ Depth</span><span><span class="s-metric-val">5.2</span><span class="s-metric-unit">cm</span></span></div>
+            </div>
+            <hr class="s-divider">
+            <div class="s-label">PATIENT / INCIDENT</div>
+            <div class="s-patient">👤 Male<br><span>ID: 2024-05-18-001</span></div>
+            <div class="s-patient">📍 Location<br><span>Sector 7A</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section class="alt" id="outcome">
+  <div class="inner">
+    <div class="eyebrow">Outcome</div>
+    <div class="sec-title">From Broad Concept to Focused MVP Direction</div>
+    <p class="outcome-intro">This work clarified the first testable direction for the platform: a shared feedback model, a two-sided structure, and a validation path for multimodal CPR guidance.</p>
+    <div class="feat-grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">
+      <div class="feat-card"><div class="feat-icon" style="background:#EFF6FF">
+<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <rect x="4.5" y="5" width="15" height="14" rx="2.5" fill="none" stroke="#2563EB" stroke-width="1.8"/>
+  <path d="M8 9h8M8 12h5M8 15h7" stroke="#2563EB" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M16.5 4v4M14.5 6h4" stroke="#2563EB" stroke-width="1.8" stroke-linecap="round"/>
+</svg>
+</div><h3>Defined the MVP scope</h3><p>Focused the first version on rhythm, force-related movement, and live guidance.</p></div>
+      <div class="feat-card"><div class="feat-icon" style="background:#FEF2F2">
+<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <path d="M3 16.5h18" stroke="#DC2626" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M4 12c1.1 0 1.3-4 2.4-4s1.3 8 2.4 8 1.3-10 2.4-10 1.3 12 2.4 12 1.3-8 2.4-8 1.3 4 2.4 4" fill="none" stroke="#DC2626" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+</div><h3>Clarified the interaction model</h3><p>Established waveform feedback as the shared visual language for compression quality.</p></div>
+      <div class="feat-card"><div class="feat-icon" style="background:#FAF5FF">
+<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <path d="M12 4l7 4v5c0 3.8-2.7 6.6-7 7-4.3-.4-7-3.2-7-7V8l7-4z" fill="none" stroke="#7C3AED" stroke-width="1.8" stroke-linejoin="round"/>
+  <path d="M12 9v4" stroke="#7C3AED" stroke-width="1.8" stroke-linecap="round"/>
+  <circle cx="12" cy="16.3" r="1" fill="#7C3AED"/>
+</svg>
+</div><h3>Identified the next product risk</h3><p>Validate whether multimodal feedback improves CPR quality and confidence compared to verbal coaching alone.</p></div>
+    </div>
+    
+  </div>
+</section>
+
+<footer><p>Remote CPR Guidance System · Human-Centered Systems Research · Confidential work sample</p></footer>
+
+<script>
+var hc = document.getElementById('hero-ecg');
+var hx = hc.getContext('2d');
+var heroOff = 0;
+function resizeHero() { hc.width = hc.offsetWidth; }
+resizeHero();
+window.addEventListener('resize', resizeHero);
+function drawHero() {
+  var W = hc.width, H = hc.height;
+  hx.clearRect(0, 0, W, H);
+  hx.beginPath();
+  hx.strokeStyle = '#93C5FD';
+  hx.lineWidth = 1.5;
+  for (var x = 0; x < W; x++) {
+    var ph = (x + heroOff) % 140, y;
+    if (ph < 8) y = H/2;
+    else if (ph < 11) y = H/2 - 6;
+    else if (ph < 13) y = H/2 + 8;
+    else if (ph < 16) y = H/2 - 36;
+    else if (ph < 19) y = H/2 + 18;
+    else if (ph < 22) y = H/2;
+    else if (ph < 35) y = H/2 - Math.sin((ph-22)/13*Math.PI) * 9;
+    else y = H/2;
+    x === 0 ? hx.moveTo(x, y) : hx.lineTo(x, y);
+  }
+  hx.stroke();
+  heroOff += 1.5;
+  requestAnimationFrame(drawHero);
+}
+drawHero();
+
+function switchTab(tab, btn) {
+  document.getElementById('tab-bystander').style.display = tab === 'bystander' ? 'block' : 'none';
+  document.getElementById('tab-expert').style.display = tab === 'expert' ? 'block' : 'none';
+  document.querySelectorAll('.demo-tab').forEach(function(t) { t.classList.remove('active'); });
+  btn.classList.add('active');
+}
+</script>
+</body>
+</html>
